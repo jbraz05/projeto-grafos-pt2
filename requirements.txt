@@ -4,3 +4,4 @@ plotly
 pyvis
 streamlit
 pytest
+flask

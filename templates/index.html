@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Spotify Graph Explorer</title>
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; background: #121212; color: white; }
+        #sidebar {
+            width: 320px; padding: 20px; background: #181818; border-right: 1px solid #282828;
+            display: flex; flex-direction: column; gap: 12px; box-shadow: 2px 0 10px rgba(0,0,0,0.5);
+        }
+        #network { flex-grow: 1; height: 100%; background: #000; }
+        
+        h2 { color: #1DB954; margin: 0 0 10px 0; font-size: 22px; }
+        label { font-size: 12px; color: #b3b3b3; margin-bottom: -5px; text-transform: uppercase; letter-spacing: 1px; }
+        select { padding: 8px; background: #333; color: white; border: 1px solid #444; border-radius: 4px; outline: none; }
+        
+        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+        button {
+            padding: 10px; border-radius: 20px; border: none; font-size: 13px; font-weight: bold; cursor: pointer; color: white; transition: transform 0.1s;
+        }
+        button:active { transform: scale(0.95); }
+        
+        .btn-bfs { background-color: #8e44ad; }
+        .btn-dfs { background-color: #2980b9; }
+        .btn-dijk { background-color: #d35400; }
+        .btn-bf { background-color: #c0392b; }
+        .btn-reset { background-color: #333; border: 1px solid #555; width: 100%; margin-top: 10px;}
+
+        #output { 
+            margin-top: 15px; padding: 10px; background: #222; border-radius: 5px; 
+            min-height: 40px; font-size: 13px; line-height: 1.4; border-left: 4px solid #1DB954;
+        }
+        .loader { display: none; color: #1DB954; font-size: 12px; text-align: center; margin-top: 5px;}
+    </style>
+</head>
+<body>
+
+<div id="sidebar">
+    <h2>Spotify Explorer 🎵</h2>
+    
+    <label>Artista de Origem (Start)</label>
+    <select id="startSelect"><option>Carregando...</option></select>
+
+    <label>Artista de Destino (End)</label>
+    <select id="endSelect"><option>Carregando...</option></select>
+
+    <div class="btn-group">
+        <button class="btn-bfs" onclick="runAlgo('bfs')">BFS</button>
+        <button class="btn-dfs" onclick="runAlgo('dfs')">DFS</button>
+    </div>
+    <div class="btn-group">
+        <button class="btn-dijk" onclick="runAlgo('dijkstra')">Dijkstra</button>
+        <button class="btn-bf" onclick="runAlgo('bellman_ford')">Bellman-Ford</button>
+    </div>
+
+    <button class="btn-reset" onclick="resetGraph()">Limpar Visualização</button>
+
+    <div id="loading" class="loader">Processando no Python...</div>
+    <div id="output">Escolha um algoritmo.</div>
+</div>
+
+<div id="network"></div>
+
+<script type="text/javascript">
+    var network = null;
+    var nodesDataset = new vis.DataSet();
+    var edgesDataset = new vis.DataSet();
+
+    async function initGraph() {
+        const response = await fetch('/api/graph');
+        const data = await response.json();
+
+        nodesDataset.add(data.nodes);
+        edgesDataset.add(data.edges);
+
+        // Popula os dois dropdowns
+        const startSelect = document.getElementById('startSelect');
+        const endSelect = document.getElementById('endSelect');
+        startSelect.innerHTML = ''; 
+        endSelect.innerHTML = '';
+        
+        // Ordena para facilitar a busca
+        data.nodes.sort((a,b) => a.label.localeCompare(b.label)).forEach(node => {
+            const opt1 = document.createElement('option');
+            opt1.value = node.id; opt1.text = node.label;
+            startSelect.appendChild(opt1);
+
+            const opt2 = document.createElement('option');
+            opt2.value = node.id; opt2.text = node.label;
+            endSelect.appendChild(opt2);
+        });
+        
+        // Seleciona itens diferentes por padrão para facilitar
+        if (endSelect.options.length > 1) endSelect.selectedIndex = 1;
+
+        var container = document.getElementById('network');
+        var options = {
+            nodes: {
+                shape: 'dot',
+                size: 15,
+                font: { size: 14, color: '#ffffff' },
+                borderWidth: 1
+            },
+            edges: {
+                width: 1,
+                color: { color: '#333', highlight: '#1DB954' },
+                smooth: { type: 'continuous' }
+            },
+            physics: {
+                forceAtlas2Based: { gravitationalConstant: -26, centralGravity: 0.005, springLength: 230, springConstant: 0.18 },
+                maxVelocity: 146,
+                solver: 'forceAtlas2Based',
+                timestep: 0.35,
+                stabilization: { iterations: 150 } 
+            },
+            interaction: { hover: true, tooltipDelay: 200 }
+        };
+        network = new vis.Network(container, {nodes: nodesDataset, edges: edgesDataset}, options);
+    }
+
+    async function runAlgo(type) {
+        const startNode = document.getElementById('startSelect').value;
+        const endNode = document.getElementById('endSelect').value;
+        const outputDiv = document.getElementById('output');
+        const loader = document.getElementById('loading');
+
+        if (type === 'dijkstra' || type === 'bellman_ford') {
+            if (startNode === endNode) {
+                outputDiv.innerText = "Erro: Origem e Destino são iguais.";
+                return;
+            }
+        }
+
+        resetGraph();
+        loader.style.display = 'block';
+        outputDiv.innerText = "Calculando...";
+
+        // Chama API
+        const url = `/api/run_algo?type=${type}&start=${encodeURIComponent(startNode)}&end=${encodeURIComponent(endNode)}`;
+        
+        try {
+            const response = await fetch(url);
+            const result = await response.json();
+            
+            loader.style.display = 'none';
+            
+            if (result.error) {
+                outputDiv.innerText = "Erro: " + result.error;
+                return;
+            }
+
+            outputDiv.innerText = result.info || "Concluído.";
+
+            if(result.path && result.path.length > 0) {
+                // Se for caminho curto (Dijkstra/BF), destaca apenas o caminho
+                if (type === 'dijkstra' || type === 'bellman_ford') {
+                    highlightPath(result.path);
+                } else {
+                    // Se for BFS/DFS, anima a exploração
+                    animateExploration(result.path);
+                }
+            }
+
+        } catch (e) {
+            loader.style.display = 'none';
+            outputDiv.innerText = "Erro na requisição.";
+            console.error(e);
+        }
+    }
+
+    function highlightPath(path) {
+        // Deixa tudo transparente
+        const allIds = nodesDataset.getIds();
+        nodesDataset.update(allIds.map(id => ({id: id, color: '#333', opacity: 0.2})));
+
+        // Pinta o caminho
+        const updates = path.map((id, index) => ({
+            id: id, 
+            color: { background: index === 0 ? '#3498db' : (index === path.length -1 ? '#e74c3c' : '#f1c40f'), border: '#fff' },
+            opacity: 1,
+            size: 25
+        }));
+        nodesDataset.update(updates);
+        
+        // Zoom no caminho
+        if (path.length > 0) {
+            network.fit({ nodes: path, animation: true });
+        }
+    }
+
+    function animateExploration(path) {
+        let i = 0;
+        const allIds = nodesDataset.getIds();
+        nodesDataset.update(allIds.map(id => ({id: id, color: '#222', opacity: 0.3})));
+
+        function step() {
+            if (i >= path.length) return;
+            nodesDataset.update({id: path[i], color: '#1DB954', opacity: 1});
+            i++;
+            // Animação mais rápida se forem muitos nós
+            setTimeout(step, path.length > 500 ? 5 : 50);
+        }
+        step();
+    }
+
+    function resetGraph() {
+        const allIds = nodesDataset.getIds();
+        nodesDataset.update(allIds.map(id => ({
+            id: id, color: null, opacity: 1, size: 15
+        })));
+        document.getElementById('output').innerText = "Visualização limpa.";
+        network.fit({animation: true});
+    }
+
+    window.onload = initGraph;
+</script>
+</body>
+</html>
