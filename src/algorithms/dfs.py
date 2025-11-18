@@ -16,7 +16,6 @@ def dfs(graph, start_node):
             traversal_order.append(u)
             
             if u in graph.adj_list:
-                # Adiciona vizinhos à pilha
                 for v in graph.adj_list[u]:
                     if v not in visited:
                         stack.append(v)
