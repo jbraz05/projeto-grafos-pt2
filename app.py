@@ -75,13 +75,12 @@ def get_graph_data():
             edge_key = tuple(sorted((u, v)))
             
             if edge_key not in added_edges:
-                # Busca o nome da música salvo no grafo
                 track_name = graph.edge_tracks.get(edge_key, "Desconhecida")
                 
                 edges.append({
                     'from': u, 
                     'to': v, 
-                    'title': f"Música: {track_name} | Peso: {w:.2f}", 
+                    'title': f"Música: {track_name} | Peso: {w:.2f} Bilhao", 
                     'track_name': track_name,
                     'artist_1': u,
                     'artist_2': v
