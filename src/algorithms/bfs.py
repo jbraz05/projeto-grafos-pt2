@@ -8,7 +8,7 @@ def bfs(graph, start_node):
     if start_node not in graph.nodes: return [], {}
     
     visited = {start_node}
-    queue = deque([(start_node, 0)]) # (node, layer)
+    queue = deque([(start_node, 0)])
     traversal_order = []
     layers = {}
     
