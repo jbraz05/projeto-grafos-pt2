@@ -23,11 +23,12 @@ O **Spotify Graph Explorer** é uma ferramenta educacional e interativa que tran
 ### 🛤️ Algoritmos de Caminho Mínimo
 - **Dijkstra**: Encontra o caminho mais curto entre dois artistas (pesos positivos)
 - **Bellman-Ford**: Detecta ciclos negativos e calcula caminhos mínimos com pesos negativos
+  - **Nota importante**: Os pesos negativos são simulados artificialmente para demonstração do algoritmo. No contexto real, os pesos das arestas (baseados em streams) são sempre positivos, pois representam a popularidade das músicas. Os pesos negativos são aplicados apenas para fins educacionais, permitindo testar a capacidade do algoritmo de Bellman-Ford em detectar ciclos negativos e trabalhar com grafos que possuem arestas negativas.
 
 ### 🧪 Recursos Avançados
-- **Teste de pesos negativos**: Simulação de arestas com pesos negativos para testar o algoritmo de Bellman-Ford
-- **Reset de pesos**: Restauração dos pesos originais do grafo
-- **Destaque visual**: Caminhos e explorações destacados com cores diferentes
+- **Teste de pesos negativos**: Simulação artificial de arestas com pesos negativos para demonstrar o funcionamento do algoritmo de Bellman-Ford. Esses pesos negativos não representam dados reais do dataset (onde todos os pesos são positivos baseados em streams), mas servem como ferramenta educacional para validar o comportamento do algoritmo com grafos que possuem arestas negativas.
+- **Reset de pesos**: Restauração dos pesos originais do grafo (todos positivos)
+- **Destaque visual**: Caminhos e explorações destacados com cores diferentes (arestas com peso negativo são destacadas em vermelho)
 - **Informações detalhadas**: Exibição de estatísticas e métricas dos algoritmos
 
 ## 🛠️ Tecnologias Utilizadas
@@ -103,7 +104,7 @@ A aplicação estará rodando e pronta para uso!
 - **Grafos ponderados**: Pesos baseados em streams (popularidade)
 - **Busca em grafos**: BFS e DFS
 - **Caminhos mínimos**: Dijkstra e Bellman-Ford
-- **Detecção de ciclos negativos**: Validação do algoritmo de Bellman-Ford
+- **Detecção de ciclos negativos**: Validação do algoritmo de Bellman-Ford através de pesos negativos simulados (pesos reais são sempre positivos)
 
 ## 📊 Características do Dataset
 
